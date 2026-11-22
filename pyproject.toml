@@ -1,0 +1,87 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-sight"
+version = "0.1.0"
+description = "Multimodal video watching, transcript and download engine for AI agents (MCP server, JSON CLI and agent skills)."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [{ name = "agent-sight contributors" }]
+keywords = ["mcp", "ai-agents", "video", "yt-dlp", "ffmpeg", "vision", "transcript", "claude-code"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
+dependencies = [
+    # [default] pulls yt-dlp-ejs, which YouTube extraction needs alongside a JS runtime.
+    "yt-dlp[default]>=2025.11.12",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "typer>=0.12",
+    "rich>=13.7",
+    "pillow>=10.1",
+    "httpx>=0.27",
+    "mcp>=1.10",
+    "anyio>=4.3",
+]
+
+[project.optional-dependencies]
+# Bundled static ffmpeg binary for machines without a system ffmpeg.
+ffmpeg = ["imageio-ffmpeg>=0.5"]
+# Local speech-to-text fallback when a video has no captions.
+whisper = ["faster-whisper>=1.0"]
+# Content-aware scene detection (alternative to the built-in ffmpeg scene filter).
+scenes = ["scenedetect[opencv-headless]>=0.6.4"]
+# JavaScript runtime (Deno) used by yt-dlp to solve YouTube player challenges.
+js = ["yt-dlp[deno]>=2025.11.12"]
+all = ["agent-sight[ffmpeg,whisper,scenes,js]"]
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.10", "imageio-ffmpeg>=0.5"]
+
+[project.scripts]
+agent-sight = "agent_sight.interfaces.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/agent-sight/agent-sight"
+Issues = "https://github.com/agent-sight/agent-sight/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_sight"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"skills/SKILL.md" = "agent_sight/_skill/SKILL.md"
+
+[tool.hatch.build.targets.sdist]
+include = ["src/agent_sight", "skills", "tests", "README.md", "LICENSE", ".env.example"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = ["ffmpeg: requires an ffmpeg binary (system or imageio-ffmpeg)"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["B008", "E501", "RUF046", "SIM105", "SIM102"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+# Optional extras (faster-whisper, scenedetect, mcp v1) need ignores that are unused when absent.
+warn_unused_ignores = false
